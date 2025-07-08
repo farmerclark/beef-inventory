@@ -85,6 +85,7 @@
       const tag = prompt('Enter tag number to load\nAvailable: ' + tagNumbers.join(', '));
       if (tag && deliveries[tag]) {
         loadFromLocalStorage(tag);
+        alert(`Loaded record for cow ${tag}`);
       } else {
         alert('Tag not found.');
       }
@@ -147,6 +148,16 @@
       document.getElementById('cutsContainer').appendChild(cutSection);
     }
 
+    function addPackage(index) {
+      const weightInput = document.getElementById(`cut-${index}-weight`);
+      const weight = parseFloat(weightInput.value);
+      if (!isNaN(weight) && weight > 0) {
+        cuts[index].packages.push(weight);
+        updatePackageList(index);
+        weightInput.value = '';
+      }
+    }
+
     function updatePackageList(index) {
       const listDiv = document.getElementById(`cut-${index}-list`);
       const packages = cuts[index].packages;
@@ -155,6 +166,11 @@
       const total = packages.reduce((a, b) => a + b, 0);
       document.getElementById(`cut-${index}-totalWeight`).textContent = total.toFixed(2);
     }
+
+    // Auto-load the most recent record if available (optional)
+    const saved = JSON.parse(localStorage.getItem('beefInventoryAll') || '{}');
+    const recentTag = Object.keys(saved).slice(-1)[0];
+    if (recentTag) loadFromLocalStorage(recentTag);
   </script>
 </body>
 </html>
