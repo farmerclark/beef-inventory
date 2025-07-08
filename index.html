@@ -79,7 +79,82 @@
       localStorage.setItem('beefInventoryAll', JSON.stringify(deliveries));
     }
 
-    // (all the other JavaScript functions stay unchanged)
+    function selectRecord() {
+      const deliveries = JSON.parse(localStorage.getItem('beefInventoryAll') || '{}');
+      const tagNumbers = Object.keys(deliveries);
+      const tag = prompt('Enter tag number to load\nAvailable: ' + tagNumbers.join(', '));
+      if (tag && deliveries[tag]) {
+        loadFromLocalStorage(tag);
+      } else {
+        alert('Tag not found.');
+      }
+    }
+
+    function loadFromLocalStorage(tagNumber) {
+      const deliveries = JSON.parse(localStorage.getItem('beefInventoryAll') || '{}');
+      const data = deliveries[tagNumber];
+      if (!data) return;
+
+      cuts = [];
+      document.getElementById('dateReceived').value = data.dateReceived || '';
+      document.getElementById('tagNumber').value = data.tagNumber || '';
+      document.getElementById('hangingWeight').value = data.hangingWeight || '';
+      document.getElementById('age').value = data.age || '';
+      document.getElementById('cowCost').value = data.cowCost || '';
+      document.getElementById('processingFees').value = data.processingFees || '';
+      document.getElementById('cutsContainer').innerHTML = '';
+
+      data.cuts.forEach((cut, index) => {
+        addCutEntry();
+        const selects = document.querySelectorAll('.cut-entry select');
+        if (selects[index]) selects[index].value = cut.name;
+        cuts[index].name = cut.name;
+        cut.packages.forEach(pkg => {
+          cuts[index].packages.push(pkg);
+        });
+        updatePackageList(index);
+      });
+    }
+
+    function addCutEntry() {
+      const cutIndex = cuts.length;
+      const cut = {
+        name: '',
+        packages: []
+      };
+      cuts.push(cut);
+
+      const cutSection = document.createElement('div');
+      cutSection.className = 'cut-section cut-entry';
+      cutSection.innerHTML = `
+        <label>Cut Name
+          <select onchange="cuts[${cutIndex}].name = this.value">
+            <option value="">Select a cut</option>
+            <option value="Ribeye">Ribeye</option>
+            <option value="NY Strip">NY Strip</option>
+            <option value="Filet">Filet</option>
+            <option value="Ground Beef">Ground Beef</option>
+          </select>
+        </label>
+        <label>Package Weight (lbs)
+          <input type="number" step="0.01" id="cut-${cutIndex}-weight">
+        </label>
+        <button type="button" onclick="addPackage(${cutIndex})">Add Package</button>
+        <div class="package-list" id="cut-${cutIndex}-list"></div>
+        <p>Total Packages: <span id="cut-${cutIndex}-totalPackages">0</span></p>
+        <p>Total Weight: <span id="cut-${cutIndex}-totalWeight">0.00</span> lbs</p>
+      `;
+      document.getElementById('cutsContainer').appendChild(cutSection);
+    }
+
+    function updatePackageList(index) {
+      const listDiv = document.getElementById(`cut-${index}-list`);
+      const packages = cuts[index].packages;
+      listDiv.innerHTML = packages.map((w, i) => `<div>Package ${i+1}: ${w.toFixed(2)} lbs</div>`).join('');
+      document.getElementById(`cut-${index}-totalPackages`).textContent = packages.length;
+      const total = packages.reduce((a, b) => a + b, 0);
+      document.getElementById(`cut-${index}-totalWeight`).textContent = total.toFixed(2);
+    }
   </script>
 </body>
 </html>
