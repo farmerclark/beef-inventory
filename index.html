@@ -117,6 +117,7 @@
         });
         updatePackageList(index);
       });
+      renderCutSummaries();
     }
 
     function addCutEntry() {
@@ -173,6 +174,84 @@
     const saved = JSON.parse(localStorage.getItem('beefInventoryAll') || '{}');
     const recentTag = Object.keys(saved).slice(-1)[0];
     if (recentTag) loadFromLocalStorage(recentTag);
-  </script>
+    function renderCutSummaries() {
+    const summary = document.getElementById('averageSummary');
+    if (!summary) return;
+
+    const html = cuts.map(cut => {
+      const totalWeight = cut.packages.reduce((a, b) => a + b, 0).toFixed(2);
+      const totalPackages = cut.packages.length;
+      const packageList = cut.packages.map((w, i) => `Package ${i + 1}: ${w.toFixed(2)} lbs`).join('<br>');
+      return `
+        <div style="margin-top: 1rem; border-top: 1px solid #ccc; padding-top: 0.5rem">
+          <strong>${cut.name}</strong><br>
+          Total Packages: ${totalPackages}<br>
+          Total Weight: ${totalWeight} lbs<br>
+          ${packageList}
+        </div>
+      `;
+    }).join('');
+
+    summary.innerHTML = `<h3>Cut Summaries</h3>${html}`;
+  }
+  function downloadCSV() {
+  const deliveries = JSON.parse(localStorage.getItem('beefInventoryAll') || '{}');
+  const rows = [
+    ['Tag Number', 'Date Received', 'Hanging Weight', 'Age', 'Cow Cost', 'Processing Fees', 'Total Packaged Weight', 'Yield %', 'Total Cost', 'Cost per Pound']
+  ];
+
+  for (const tag in deliveries) {
+    const d = deliveries[tag];
+    let totalPackagedWeight = 0;
+    d.cuts.forEach(cut => {
+      totalPackagedWeight += cut.packages.reduce((a, b) => a + b, 0);
+    });
+    const yieldPercent = d.hangingWeight ? ((totalPackagedWeight / d.hangingWeight) * 100).toFixed(2) : '0';
+    const totalCost = (parseFloat(d.cowCost) + parseFloat(d.processingFees)).toFixed(2);
+    const costPerPound = totalPackagedWeight > 0 ? (totalCost / totalPackagedWeight).toFixed(2) : '0.00';
+
+    rows.push([
+      d.tagNumber,
+      d.dateReceived,
+      d.hangingWeight,
+      d.age,
+      d.cowCost,
+      d.processingFees,
+      totalPackagedWeight.toFixed(2),
+      yieldPercent,
+      totalCost,
+      costPerPound
+    ]);
+  }
+
+  // Calculate and add average row
+  const count = Object.keys(deliveries).length;
+  if (count > 0) {
+    let sumHanging = 0, sumPackaged = 0, sumCost = 0;
+    Object.values(deliveries).forEach(d => {
+      const totalPackaged = d.cuts.reduce((sum, cut) => sum + cut.packages.reduce((a, b) => a + b, 0), 0);
+      const totalCost = parseFloat(d.cowCost) + parseFloat(d.processingFees);
+      sumHanging += parseFloat(d.hangingWeight);
+      sumPackaged += totalPackaged;
+      sumCost += totalCost;
+    });
+    const avgYield = sumHanging ? ((sumPackaged / sumHanging) * 100).toFixed(2) : '0';
+    const avgCostPerLb = sumPackaged ? (sumCost / sumPackaged).toFixed(2) : '0.00';
+    rows.push([]); // empty row before average
+    rows.push(['AVERAGES', '', (sumHanging / count).toFixed(2), '', '', '', (sumPackaged / count).toFixed(2), avgYield, (sumCost / count).toFixed(2), avgCostPerLb]);
+  }
+
+  let csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("
+");
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", "beef_inventory_summary.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+  }
+</script>
 </body>
 </html>
