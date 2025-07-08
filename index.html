@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Beef Inventory Form</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 1rem; }
+    label { display: block; margin-top: 1rem; }
+    input, select, button, textarea { width: 100%; padding: 0.5rem; margin-top: 0.25rem; }
+    .cut-section { border: 1px solid #ccc; padding: 1rem; margin-top: 1rem; }
+    .package-list { margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>Beef Inventory - New Delivery</h1>
+  <form id="inventory-form">
+    <label>Date Received
+      <input type="date" id="dateReceived" required>
+    </label>
+    <label>Tag Number
+      <input type="text" id="tagNumber" required>
+    </label>
+    <label>Hanging Weight (lbs)
+      <input type="number" id="hangingWeight" step="0.01" required>
+    </label>
+    <label>Age of Cow (months)
+      <input type="number" id="age" required>
+    </label>
+    <label>Cost of Cow ($)
+      <input type="number" id="cowCost" step="0.01" required>
+    </label>
+    <label>Processing Fees ($)
+      <input type="number" id="processingFees" step="0.01" required>
+    </label>
+
+    <div class="cut-section">
+      <h3>Cut Entry</h3>
+      <label>Cut Name
+        <input type="text" id="cutName">
+      </label>
+      <label>Package Weight (lbs)
+        <input type="number" id="packageWeight" step="0.01">
+      </label>
+      <button type="button" onclick="addPackage()">Add Package</button>
+      <div class="package-list" id="packageList"></div>
+      <p>Total Packages: <span id="totalPackages">0</span></p>
+      <p>Total Weight: <span id="totalWeight">0.00</span> lbs</p>
+    </div>
+
+    <button type="submit">Save Delivery</button>
+  </form>
+
+  <script>
+    const packageWeights = [];
+
+    function addPackage() {
+      const weightInput = document.getElementById('packageWeight');
+      const weight = parseFloat(weightInput.value);
+      if (!isNaN(weight) && weight > 0) {
+        packageWeights.push(weight);
+        updatePackageList();
+        weightInput.value = '';
+      }
+    }
+
+    function updatePackageList() {
+      const listDiv = document.getElementById('packageList');
+      listDiv.innerHTML = packageWeights.map((w, i) => `<div>Package ${i+1}: ${w.toFixed(2)} lbs</div>`).join('');
+      document.getElementById('totalPackages').textContent = packageWeights.length;
+      const total = packageWeights.reduce((a, b) => a + b, 0);
+      document.getElementById('totalWeight').textContent = total.toFixed(2);
+    }
+
+    document.getElementById('inventory-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      alert('Delivery saved (not yet connected to storage).');
+    });
+  </script>
+</body>
+</html>
